@@ -11,3 +11,7 @@ new file, new me.
 * [ ] statistics reliance improvement by accounting for classes via their site
 
 * [ ] dry runs
+
+* [ ] check if the user gave multiple same gyms
+
+* [ ] change password mail validation, if the response is bad THEN it prompts you or exits the program

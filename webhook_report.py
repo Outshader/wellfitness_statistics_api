@@ -52,8 +52,10 @@ def create_debug_zip(txt: str, txt_split: str, filename: str):
 
 
 def report_success(ppl_count: str) -> int:
-    ppl_count = ppl_count
-    return send_webhook(f"Successfully logged {ppl_count} people at {datetime.now().strftime('%Y-%m-%d_%H-%M')}")
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M')
+    content = "\n".join(f"{k} {v}" for k,v in ppl_count.items())
+    
+    return send_webhook(f"Successfully logged: \n {content} \n people at {datetime.now().strftime('%Y-%m-%d_%H-%M')}")
 
 def other_error_occured(log_file: str) -> int:
     return send_webhook("Some exception or error occured, check attached logs", log_file)
