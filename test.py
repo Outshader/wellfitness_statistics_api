@@ -1,31 +1,15 @@
-string = "1,2,3,4 23  23" 
-string += " "
-
-start, end = 0, None
-parsed = []
-non_int = 0
-
-digit = ""
 
 
-for char in string:
-    if char.isdigit():
-        digit += char
-    elif digit:
-        print(char, digit)
-        parsed.append(int(digit))
-        digit = ""
-        
-if digit:
-    parsed.append(int(digit))
+with open("vars.env", "r") as f:
+    data = f.readlines()
+    for i in data:
+        if "PASSWORD" in i:
+            password = i.strip().split("=", 1)
+            break
 
-        
-         
-        
-print(parsed)
-
-import re
-
-reparsed = [int(match) for match in re.findall(r'\d+', string)]
-
-print(reparsed)
+    password = password[1]
+    length = len(password)-1
+    first, last = password[0], password[-1]
+    if first == last:
+        password = password.strip(f"{first}")
+    print(password)

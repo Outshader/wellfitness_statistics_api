@@ -1,15 +1,17 @@
 from datetime import datetime
 import os
 import csv
-from reports import ppl_count_not_found, report_success
+from report_webhook import report_ppl_count_not_found, report_success
 import argparse
 from dotenv import load_dotenv
 from check_valid_parameters import  check_webhook_send, check_webhook_send, check_gym_nr
 import sys
 import requests
-from clubs import club_addresses
 from club_requests import request_data
 import re
+from report_csv import report_csv
+from clubs import club_addresses
+
 
 load_dotenv("vars.env")
 
@@ -24,45 +26,38 @@ class config_static():
     
     def should_append_csv(self):
         arg_skip = self.args.skip_csv
-        env_skip = os.getenv("save_to_csv", "true").lower() == "false"
+        env_skip = os.getenv("SAVE_TO_CSV", "true").lower() == "false"
         return arg_skip or env_skip
         
     def should_send_webhook(self):
         arg_skip = self.args.skip_webhook
-        env_skip = os.getenv("send_webhook", "true").lower() == "false"
+        env_skip = os.getenv("SEND_WEBHOOK", "true").lower() == "false"
         return arg_skip or env_skip
     
+    
     def gym_number(self):
+        if not check_gym_nr():
+            raise RuntimeError("Wrong gym numbers, use comma or space separated values with up to 105 values")
+        
         if self.args.gym:
-            return [int(match) for match in re.findall(r'\d+', ' '.join(self.args.gym))]
+            gym_nrs = [int(match) for match in re.findall(r'\d+', ' '.join(self.args.gym))]
+            return list(set(gym_nrs))
         else:
-            gym_nr = os.getenv("gym_nr")
+            gym_nr = os.getenv("GYM_NR")
             if gym_nr:
-                return [int(match) for match in re.findall(r'\d+', gym_nr)]
+                gym_nrs = [int(match) for match in re.findall(r'\d+', ' '.join(self.args.gym))]
+                return list(set(gym_nrs))
             else:
                 return [1, 2, 3, 4]    
 
 
-def csv_append(ppl_count: int, timestamp: str, gyms: list) -> int:
-    with open("logs.csv", "a", newline="", encoding="utf-8") as file:
-        fieldnames = ["Club name", "date_time", "ppl_count"]
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
 
-        for i in gyms:
-            club_name = club_addresses[i]
-            writer.writerow({
-                "Club name": club_name, 
-                "date_time": timestamp, 
-                "ppl_count": ppl_count[club_name]
-            })
-        
-    return 0
 
 
 def main() -> int:
     config = config_static()
     gym_nr = config.gym_number()
-    ppl_count = request_data()
+    ppl_count = request_data(gym_nr)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
     
     print("Logging results")
@@ -70,7 +65,7 @@ def main() -> int:
     if config.should_append_csv():
         print("Skipped csv append")
     else:
-        csv_append(ppl_count, timestamp, gym_nr)
+        report_csv(ppl_count, timestamp, gym_nr)
     
     if config.should_send_webhook():
         print("Skipped webhook")

@@ -16,4 +16,4 @@ new file, new me.
 
 * [ ] change password mail validation, if the response is bad THEN it prompts you or exits the program
 
-* [ ] change script.py to use classes
+* [x] change script.py to use classes
