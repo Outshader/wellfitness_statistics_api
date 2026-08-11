@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import requests
 import dotenv
 import os
+from clubs import club_addresses
 
 dotenv.load_dotenv()
 
@@ -51,6 +52,19 @@ def get_token():
         
         
         
+def parse_response(data: dict, gym_nr: list) -> list:
+    addresses = []
+    for i in gym_nr:
+        addresses.append(club_addresses[i])
+        
+    gym_count = {}
+    for club_info in data["UsersInClubList"]:
+        if club_info["ClubAddress"] in addresses:
+            gym_count[club_info["ClubAddress"]] = club_info["UsersCountCurrentlyInClub"]
+    return gym_count
+        
+        
+        
 def request_data():
     print("Reading token from token.txt")
     token = get_token()
@@ -68,7 +82,8 @@ def request_data():
         "CpAuthToken": token,
     }
     response = requests.post(url, cookies=cookies)
-    return response.json()
+    parsed_response = parse_response(response.json())
+    return parsed_response
 
 
 if __name__ == "__main__":

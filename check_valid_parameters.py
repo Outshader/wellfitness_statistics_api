@@ -2,6 +2,8 @@ import os, dotenv
 
 dotenv.load_dotenv()
 
+
+
 def check_gym_nr():
     try: 
         nr = os.getenv("gym_nr")
@@ -11,8 +13,6 @@ def check_gym_nr():
     except ValueError:
         return False
     return True
-    
-
 
 def check_webhook():
     webhook = os.getenv("webhook_url")

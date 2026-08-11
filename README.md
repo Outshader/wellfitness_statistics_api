@@ -15,3 +15,5 @@ new file, new me.
 * [ ] check if the user gave multiple same gyms
 
 * [ ] change password mail validation, if the response is bad THEN it prompts you or exits the program
+
+* [ ] change script.py to use classes
