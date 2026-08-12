@@ -1,15 +1,14 @@
+import requests, json
+response = requests.post(
+    url="https://wellfitness.perfectgym.com/ClientPortal2/Classes/ClassCalendar/WeeklyClasses",
+    json={"clubId": 17, "daysInWeek": 0, "timeTableId": None},
+    headers={
+        "accept": "application/json",
+        "x-requested-with": "XMLHttpRequest",
+        "cp-lang": "pl",
+        "cp-mode": "desktop"
+    }
+)
+print(json.dumps(response.json(), indent=2))
 
 
-with open("vars.env", "r") as f:
-    data = f.readlines()
-    for i in data:
-        if "PASSWORD" in i:
-            password = i.strip().split("=", 1)
-            break
-
-    password = password[1]
-    length = len(password)-1
-    first, last = password[0], password[-1]
-    if first == last:
-        password = password.strip(f"{first}")
-    print(password)

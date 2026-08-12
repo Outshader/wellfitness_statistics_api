@@ -34,7 +34,7 @@ class send_request():
             return response.status_code
                     
 
-    def create_debug_zip(txt: str, txt_split: str, filename: str):
+    def create_debug_zip(txt: str, txt_split: str, filename: str) -> str:
         temp_dir = tempfile.mkdtemp()
         print(f"Created temp dir {temp_dir}")
         screenshot_filename = filename + ".png"
@@ -71,7 +71,7 @@ class request_types():
         send = send_request()
         return send.send_webhook(f"Successfully logged: \n {content} \n people at {timestamp}")
 
-    def report_other_error_occured(log_file: str) -> int:
+    def report_other_error_occured(log_file: Optional[str]) -> int:
         send = send_request()
         return send.send_webhook("Some exception or error occured, check attached logs", log_file)
 
