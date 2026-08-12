@@ -82,5 +82,5 @@ The maximum amount tested by me was 100,000, and it returned results from "1752-
 	- [ ] Cleaner and consisten error handling
 		- [ ] empty/bad responses
 	- [ ] Cleaner code structure (more classes)
-        - [x] club_requests.py now uses classes, changed the rest of the files appropriately
+        - [x] club_requests.py cleaned
 	- [ ] more dry run options
