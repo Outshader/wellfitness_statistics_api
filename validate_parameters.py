@@ -3,10 +3,9 @@ import os, dotenv
 dotenv.load_dotenv()
 
 
-def check_gym_nr():
+def check_gym_ids(gym_ids):
     try: 
-        nr = os.getenv("GYM_NR")
-        nr = nr.split(",")
+        gym_ids = gym_ids.split(",")
         how_many = 0
         for i in nr:
             how_many += 1 
@@ -20,16 +19,10 @@ def check_gym_nr():
 
 
 def check_webhook():
-    webhook = os.getenv("WEBHOOK_URL")
+    webhook = os.getenv("WEBHOOK_URL", "")
     if not ("https://discordapp.com/api/webhooks/" in webhook):
         return False
     return True
 
-
-def check_webhook_send():
-    webhook_send = os.getenv("SEND_WEBHOOK")
-    if webhook_send in [True, False]:
-        return True
-    return False
 
 

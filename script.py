@@ -4,18 +4,18 @@ import csv
 from report_webhook import request_types
 import argparse
 from dotenv import load_dotenv
-from check_valid_parameters import  check_webhook_send, check_webhook_send, check_gym_nr
+from check_valid_parameters import  check_webhook_send, check_webhook_send, check_gym_ids
 import sys
 import requests
-from club_requests import SendResponse
+from club_requests import ResponseHandling
 import re
-from report_csv import report_csv
+from report_csv import report_csv_append
 from clubs import club_addresses
 
 
 load_dotenv("vars.env")
 
-class config_static():
+class config():
     def __init__(self):
         load_dotenv("vars.env")
         parser = argparse.ArgumentParser()
@@ -35,46 +35,44 @@ class config_static():
         return arg_skip or env_skip
     
     
-    def gym_number(self) -> list[int]:
-        if not check_gym_nr():
-            raise RuntimeError("Wrong gym numbers, use comma or space separated values with up to 105 values")
-        
+    def get_gym_ids(self) -> list[int]:   
         if self.args.gym:
-            gym_nrs = [int(match) for match in re.findall(r'\d+', ' '.join(self.args.gym))]
-            return list(set(gym_nrs))
+            gym_ids = [int(match) for match in re.findall(r'\d+', ' '.join(self.args.gym))]
+            return list(set(gym_ids))
         else:
-            gym_nr = os.getenv("GYM_NR")
-            if gym_nr:
-                gym_nrs = [int(match) for match in re.findall(r'\d+', ' '.join(self.args.gym))]
-                return list(set(gym_nrs))
+            gym_ids = os.getenv("GYM_IDS")
+            if gym_ids and check_gym_ids(gym_ids):
+                gym_ids = [int(match) for match in re.findall(r'\d+', ' '.join(self.args.gym))]
+                return list(set(gym_ids))
             else:
-                return [1, 2, 3, 4]    
+                return [1, 2, 3, 4]
 
 
-
-
-
-def main() -> int:
-    send_request = request_types()
-    config = config_static()
-    gym_nr = config.gym_number()
-    ppl_count = SendResponse().request_data(gym_nr)
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+class MainOrchestrator():
+    def __init__(self):
+        self.send_request = request_types()
+        self.send_response = ResponseHandling()
+        self.config = config()
+        self.gym_ids = config.get_gym_ids()
     
-    print("Logging results")
-    
-    if config.should_append_csv():
-        print("Skipped csv append")
-    else:
-        report_csv(ppl_count, timestamp, gym_nr)
-    
-    if config.should_send_webhook():
-        print("Skipped webhook")
-    else:
-        send_request.report_success(ppl_count)
-    
-    print("Done!")
-    return 0
+    def main() -> int:
+        gym_data = send_response.request_data(gym_id)
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        
+        print("Logging results")
+        
+        if config.should_append_csv():
+            print("Skipped csv append")
+        else:
+            report_csv(gym_data, timestamp, gym_id)
+        
+        if config.should_send_webhook():
+            print("Skipped webhook")
+        else:
+            send_request.report_success(gym_data)
+        
+        print("Done!")
+        return 0
 
 if __name__ == "__main__":
-    main()
+    MainOrchestrator().main()

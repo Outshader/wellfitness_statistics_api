@@ -105,36 +105,45 @@ class ValidateConfig():
         return email, password
     
 
+
     
     
-    
-class SendResponse():
+class ResponseHandling():
     def __init__(self):
         token_class = ValidateToken()
         self.token = token_class.token
+            
+    def validate_response(gym_data: dict, addresses: list) -> dict:
+        if len(gym_data) != len(gym_id):
+            if not config.should_send_webhook():
+                sys.exit("Parsing of the response data failed! The report webhook was not sent")
+            else: 
+                send_request.report_ppl_count_not_found("Parsing of the response data failed! The report webhook was sent")
+                sys.exit("Parsing of the response data failed! The report webhook was sent")
+        return 0
     
-    def parse_response(data: dict, gym_nr: list) -> dict[str, str]:
+    
+    def parse_response(self, data: dict, gym_id: list) -> dict[str, str]:
         addresses = []
-        for i in gym_nr:
+        for i in gym_id:
             addresses.append(club_addresses[i])
             
-        gym_count = {}
+        gym_data = {}
         for club_info in data["UsersInClubList"]:
             if club_info["ClubAddress"] in addresses:
-                gym_count[club_info["ClubAddress"]] = club_info["UsersCountCurrentlyInClub"]
-        if len(gym_count) != len(gym_nr):
-            request_types().report_other_error_occured(club_info)
+                gym_data[club_info["ClubAddress"]] = club_info["UsersCountCurrentlyInClub"]
+
+        self.validate_response(gym_data, addresses)
+        return gym_data        
+
             
-        return gym_count
-            
-            
-    def request_data(self, gym_nr: list) -> dict:
+    def request_data(self, gym_id: list) -> dict:
         url = "https://wellfitness.perfectgym.com/ClientPortal2/Clubs/Clubs/GetMembersInClubs"
         cookies = {
             "CpAuthToken": self.token,
         }
         response = requests.post(url, cookies=cookies)
-        parsed_response = self.parse_response(response.json(), gym_nr)
+        parsed_response = self.parse_response(response.json(), gym_id)
         return parsed_response
 
 
