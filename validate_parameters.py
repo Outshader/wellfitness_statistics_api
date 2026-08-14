@@ -1,6 +1,6 @@
 import os, dotenv
 
-dotenv.load_dotenv()
+dotenv.load_dotenv("vars.env")
 
 
 def check_gym_ids(gym_ids):

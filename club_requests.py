@@ -117,7 +117,7 @@ class ResponseHandling():
     def __init__(self):
         self.token = ValidateToken().token
 
-    def validate_response(self, gym_ids: list[int], gym_data: dict[str, int]) -> dict:
+    def validate_response(self, gym_ids: list[int], gym_data: dict[str, int]) -> None:
         if len(gym_data) != len(gym_ids):
             if config().should_send_webhook():
                 RequestTypes().report_other_error_occured("Parsing of the response data failed! The report webhook was sent")
