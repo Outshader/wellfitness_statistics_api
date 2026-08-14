@@ -1,11 +1,13 @@
 import jwt
 from datetime import datetime, timedelta
 import requests
-import dotenv
+import dotenv 
 import os
 from clubs import club_addresses
 import json
-from report_webhook import request_types
+from report_webhook import RequestTypes
+from config import config
+
 
 dotenv.load_dotenv("vars.env")
 
@@ -33,11 +35,13 @@ class ValidateToken():
         else:
             return ""
     
-    def check_response(self, response: str) -> str:
-        json_content, cookies = response.json(), response.cookies
-        if "CpAuthToken" not in cookies or len(cookies["CpAuthToken"]) == 0:
+    def check_response(self, response: requests.models.Response) -> str:
+        json_content = response.json()
+        cookies = response.cookies
+        token = cookies["CpAuthToken"] or ""
+        if not token:
+            err_content = json_content["Errors"]
             if "Errors" in json_content:
-                err_content = json_content["Errors"]
                 msg_content = err_content[0]["Message"]
                 if "login" in msg_content or "password" in msg_content:
                     return "Login or password is incorrect"
@@ -50,7 +54,7 @@ class ValidateToken():
             return ""
     
     
-    def refresh_token(self, email: str, password: str) -> int:
+    def refresh_token(self, email: str, password: str) -> None:
         url = "https://wellfitness.perfectgym.pl/ClientPortal2/Auth/Login"
         headers = {"content-type": "application/json;charset=UTF-8"}
         data_raw = {"RememberMe": "false", "Login": email, "Password": password}
@@ -67,13 +71,13 @@ class ValidateToken():
         authToken = cookies["CpAuthToken"]
         with open("token.txt", "w") as f:
             f.write(authToken)
-        return 0
     
-    def jwt_exp(token: str) -> bool:
+    def jwt_exp(self, token: str) -> bool:
         decode = jwt.decode(token, options={"verify_signature": False})
         exp_timestamp = decode["exp"]
         expiry_time = datetime.fromtimestamp(exp_timestamp)
-        if ((expiry_time - datetime.now()) <= timedelta(0)):
+        is_expired = expiry_time <= datetime.now()
+        if is_expired:
             return True
         else:
             return False
@@ -89,14 +93,15 @@ class ValidateConfig():
             data = f.readlines()
             for i in data:
                 if "PASSWORD" in i:
-                    password = i.strip().split("=", 1)
-                    break
+                    password = i.strip().split("=", 1)[1]
+                    first_char, last_char = password[0], password[-1]
+                    if first_char == last_char:
+                        password = password.strip(f"{first_char}")
+                    return password
 
-            password = password[1]
-            first, last = password[0], password[-1]
-            if first == last:
-                password = password.strip(f"{first}")
-            return password
+                
+
+            
 
     def get_credentials(self) -> tuple[str, str]:
         email, password = os.getenv("EMAIL", ""), self.get_password()
@@ -110,43 +115,37 @@ class ValidateConfig():
     
 class ResponseHandling():
     def __init__(self):
-        token_class = ValidateToken()
-        self.token = token_class.token
-            
-    def validate_response(gym_data: dict, addresses: list) -> dict:
-        if len(gym_data) != len(gym_id):
-            if not config.should_send_webhook():
-                sys.exit("Parsing of the response data failed! The report webhook was not sent")
+        self.token = ValidateToken().token
+
+    def validate_response(self, gym_ids: list[int], gym_data: dict[str, int]) -> dict:
+        if len(gym_data) != len(gym_ids):
+            if config().should_send_webhook():
+                RequestTypes().report_other_error_occured("Parsing of the response data failed! The report webhook was sent")
+                raise RuntimeError("Parsing of the response data failed! The report webhook was sent")
             else: 
-                send_request.report_ppl_count_not_found("Parsing of the response data failed! The report webhook was sent")
-                sys.exit("Parsing of the response data failed! The report webhook was sent")
-        return 0
+                raise RuntimeError("Parsing of the response data failed! The report webhook was not sent")
     
     
-    def parse_response(self, data: dict, gym_id: list) -> dict[str, str]:
+    def parse_response(self, data: dict, gym_ids: list[int]) -> dict[str, str]:
         addresses = []
-        for i in gym_id:
-            addresses.append(club_addresses[i])
+        for gym_id in gym_ids:
+            addresses.append(club_addresses[gym_id])
             
         gym_data = {}
         for club_info in data["UsersInClubList"]:
             if club_info["ClubAddress"] in addresses:
                 gym_data[club_info["ClubAddress"]] = club_info["UsersCountCurrentlyInClub"]
 
-        self.validate_response(gym_data, addresses)
+        self.validate_response(gym_ids, gym_data)
         return gym_data        
 
             
-    def request_data(self, gym_id: list) -> dict:
+    def request_data(self, gym_ids: list[int]) -> dict:
         url = "https://wellfitness.perfectgym.com/ClientPortal2/Clubs/Clubs/GetMembersInClubs"
         cookies = {
             "CpAuthToken": self.token,
         }
         response = requests.post(url, cookies=cookies)
-        parsed_response = self.parse_response(response.json(), gym_id)
+        parsed_response = self.parse_response(response.json(), gym_ids)
         return parsed_response
 
-
-if __name__ == "__main__":
-    obj = SendResponse()
-    print(obj.parse_response())

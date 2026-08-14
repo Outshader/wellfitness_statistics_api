@@ -2,16 +2,13 @@
 from clubs import club_addresses
 import csv
 
-def report_csv_append(ppl_count: int, timestamp: str, gyms: list) -> int:
+def report_csv_append(gym_data: dict[str, int], timestamp: str) -> None:
     with open("logs.csv", "a", newline="", encoding="utf-8") as file:
-        fieldnames = ["Club name", "date_time", "ppl_count"]
+        fieldnames = ["Club address", "date_time", "ppl_count"]
         writer = csv.DictWriter(file, fieldnames=fieldnames)
-        for i in gyms:
-            club_name = club_addresses[i]
+        for address,count in gym_data.items():
             writer.writerow({
-                "Club name": club_name, 
+                "Club address": address, 
                 "date_time": timestamp, 
-                "ppl_count": ppl_count[club_name]
+                "ppl_count": count
             })
-        
-    return 0

@@ -6,35 +6,31 @@ import os
 import json
 from typing import Optional
 from dotenv import load_dotenv
-from check_valid_parameters import check_webhook
+from validate_parameters import check_webhook
 
 
 
 
 
-class send_request():
-    def __init__(self):
+class SendRequest():
+    def __init__(self) -> None:
         load_dotenv("vars.env")
-        WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-        
-
+        self.WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
+    
     def send_webhook(self, content: str, file: Optional[str | list] = None) -> int:
         data = {"payload_json": json.dumps({"content":content, "username":"status_bot"})}
-        
 
-        
         if file and os.path.exists(file):
             with open(file, "rb") as f:  
                 files = {"file": (os.path.basename(file), f)}
                 response = requests.post(self.WEBHOOK_URL, data=data, files=files)
                 return response.status_code
-            
         else:
             response = requests.post(self.WEBHOOK_URL, data=data)
             return response.status_code
                     
 
-    def create_debug_zip(txt: str, txt_split: str, filename: str) -> str:
+    def create_debug_zip(self, txt: str, txt_split: str, filename: str) -> str:
         temp_dir = tempfile.mkdtemp()
         print(f"Created temp dir {temp_dir}")
         screenshot_filename = filename + ".png"
@@ -59,30 +55,24 @@ class send_request():
         return zip_name
 
 
-class request_types():
+class RequestTypes():
     def __init__(self):
         if not check_webhook():
             raise RuntimeError("Missing Webhook!")
         
         
-    def report_success(ppl_count: str) -> int:
+    def report_success(self, gym_data: dict[str,int]) -> int:
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M')
-        content = "\n".join(f"{k} {v}" for k,v in ppl_count.items())
-        send = send_request()
-        return send.send_webhook(f"Successfully logged: \n {content} \n people at {timestamp}")
+        message = "\n".join(f"{v} people at {k} at {timestamp}" for k,v in gym_data.items())
+        if len(gym_data) == 1:
+            return SendRequest().send_webhook(f"Successfully logged: {message}")
+        else:
+            return SendRequest().send_webhook(f"Successfully logged: \n{message}")
 
-    def report_other_error_occured(log_file: Optional[str]) -> int:
-        send = send_request()
-        return send.send_webhook("Some exception or error occured, check attached logs", log_file)
+    def report_other_error_occured(self, log_file: Optional[str]) -> int:
+        return SendRequest().send_webhook("Some exception or error occured, check attached logs", log_file)
 
-    def report_ppl_count_not_found(txt: str, txt_split: str, filename: str) -> int:
-        send = send_request()
-        return send.send_webhook("The gym rat counter is down!", [txt, txt_split, filename])
+    def report_ppl_count_not_found(self, txt: str, txt_split: str, filename: str) -> int:
+        return SendRequest().send_webhook("The gym rat counter is down!", [txt, txt_split, filename])
 
 
-if __name__ == "__main__":
-    types = request_types()
-    txt, txt_split, filename, log_file, ppl_count = "", "", "", "", "0"
-    request_types.report_ppl_count_not_found(txt, txt_split, filename)
-    request_types.report_success(ppl_count)
-    request_types.report_other_error_occured(log_file)

@@ -7,9 +7,9 @@ def check_gym_ids(gym_ids):
     try: 
         gym_ids = gym_ids.split(",")
         how_many = 0
-        for i in nr:
+        for gym_id in gym_ids:
             how_many += 1 
-            int(i)
+            int(gym_id)
         if how_many > 105:
             return False
 
