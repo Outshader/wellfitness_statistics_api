@@ -1,3 +1,4 @@
 {
-    "pylance.typeCheckingMode": "off"
+    "pylance.typeCheckingMode": "off",
+    "python.REPL.enableREPLSmartSend": false
 }

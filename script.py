@@ -21,7 +21,7 @@ class Main():
     
     def main(self) -> None:
         gym_data = self.get_gym_data.request_data(self.gym_ids)
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        timestamp = datetime.now().strftime("%Y-%m-%A_%H-%M")
         
         print("Logging results")
         

@@ -73,7 +73,8 @@ The maximum amount tested by me was 100,000, and it returned results from "1752-
 	- [x] refresh
 	- [x] exit before trying with an outdated one/or just refresh during depends on how the refresh will work
 	- [x] refresh failure handling
-* [ ] statistics reliance improvement by accounting for classes via their site
+* [ ] statistics reliance improvement by accounting for classes via their site:
+	- [ ] logic -> store class data in a file, if the next reponse doesn't include one of the entries, change that hour's ppl_count
 * [x] dry runs
 * [x] check if the user gave multiple same gyms
 * [x] change password mail validation, if the response is bad THEN it prompts you or exits the program
@@ -84,3 +85,5 @@ The maximum amount tested by me was 100,000, and it returned results from "1752-
 	- [ ] Cleaner code structure (more classes)
         - [x] club_requests.py cleaned
 	- [ ] more dry run options
+	- [ ] more webhook content options defined in the  (current format only works for what discord accepts)
+	- [ ] streamlit graph 
