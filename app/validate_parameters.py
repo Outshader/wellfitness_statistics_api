@@ -1,6 +1,11 @@
-import os, dotenv
+import os
+from pathlib import Path
 
-dotenv.load_dotenv("vars.env")
+ROOT_DIR = Path(__file__).resolve().parents[1]
+
+import dotenv
+
+dotenv.load_dotenv(ROOT_DIR / "vars.env")
 
 
 def check_gym_ids(gym_ids):

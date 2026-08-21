@@ -1,15 +1,19 @@
 from datetime import datetime
-import os
-from report_webhook import RequestTypes
 import argparse
-from dotenv import load_dotenv
-from validate_parameters import check_gym_ids, check_webhook
-from club_requests import ResponseHandling
 import re
-from report_csv import report_csv_append
-from config import config
+from pathlib import Path
 
-load_dotenv("vars.env")
+ROOT_DIR = Path(__file__).resolve().parents[1]
+
+from dotenv import load_dotenv
+
+from app.config import config
+from app.reports.csv import report_csv_append
+from app.reports.webhook import RequestTypes
+from app.statistics.clubs.scrape import ResponseHandling
+from app.validate_parameters import check_gym_ids, check_webhook
+
+load_dotenv(ROOT_DIR / "vars.env")
 
 
 

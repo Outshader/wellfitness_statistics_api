@@ -1,22 +1,11 @@
-import requests
-import json
+
 import csv
 from datetime import datetime, timedelta
-import shutil
-from csv_methods import check_headers
 
-def scrape_data():
-    response = requests.post(
-        url="https://wellfitness.perfectgym.com/ClientPortal2/Classes/ClassCalendar/WeeklyClasses",
-        json={"clubId": 17, "categoryId": None, "timeTableId": None, "trainerId": None, "daysInWeek": 2, "QueryStartDate": "2026-08-17"},
-        headers={
-            "accept": "application/json",
-            "x-requested-with": "XMLHttpRequest",
-            "cp-lang": "pl",
-            "cp-mode": "desktop"
-        }
-    )
-    return response.json()
+from app.scripts.csv import check_headers
+from app.statistics.classes.scrape import scrape_data
+
+
     
 def iter_class(class_data):
     for data in class_data.get("CalendarData", []):
@@ -106,17 +95,8 @@ def subtract_ppl_count(to_subtract):
         writer.writeheader()
         writer.writerows(rows)
                 
-        
-                
-    # subtract all the values from logs.csv using the timestamp +/- the duration of the class
-    
-    
-    
-
-    # write_contents()
 
 def verify_class_data(data):
-    # analyze logs.csv, make logs_actual.csv where the class_data will be accounted for, 
     with open("classes.csv", "r") as file:
         writer = csv.DictReader(file)
         rows = list(writer)

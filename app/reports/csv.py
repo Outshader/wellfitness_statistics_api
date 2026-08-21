@@ -1,8 +1,9 @@
 
-from clubs import club_addresses
 import csv
 from datetime import datetime
-from csv_methods import check_headers
+
+from app import clubs
+from app.scripts.csv import check_headers
 
 
 

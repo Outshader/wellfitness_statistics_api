@@ -1,7 +1,11 @@
 import csv
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
 
 def check_headers(required):
-    with open("logs.csv", mode="r+", newline="", encoding="utf-8") as file:
+    with open(ROOT_DIR / "logs.csv", mode="r+", newline="", encoding="utf-8") as file:
         file_content = file.readlines()
         first_row = file_content[0]
         
@@ -25,7 +29,3 @@ def check_headers(required):
             file.seek(0)
             file.truncate(0)
             file.write(file_content)
-            
-            
-
-    

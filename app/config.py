@@ -1,14 +1,18 @@
-import dotenv
+import os
 import argparse
 import re
-import os
-from validate_parameters import check_gym_ids, check_webhook
+from pathlib import Path
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
+
+import dotenv
+
+from app.validate_parameters import check_gym_ids, check_webhook
 
 
 class config():
     def __init__(self):
-        dotenv.load_dotenv("vars.env")
+        dotenv.load_dotenv(ROOT_DIR / "vars.env")
         parser = argparse.ArgumentParser()
         parser.add_argument('--skip-webhook', '-swh', action='store_true', help='Skip webhook usage')
         parser.add_argument('--skip-csv', '-scsv', action='store_true', help='Skip csv append usage')

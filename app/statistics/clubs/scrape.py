@@ -1,15 +1,14 @@
-import jwt
-from datetime import datetime, timedelta
-import requests
-import dotenv 
 import os
-from clubs import club_addresses
-import json
-from report_webhook import RequestTypes
-from config import config
+from datetime import datetime
+from pathlib import Path
 
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
-dotenv.load_dotenv("vars.env")
+import jwt
+import requests
+
+from app.statistics.clubs.parse import ValidateConfig
+
 
 class ValidateToken():
     def __init__(self):
@@ -29,8 +28,9 @@ class ValidateToken():
         return token
     
     def read_token(self) -> str:
-        if os.path.exists("token.txt"):
-            with open("token.txt", "r") as f:
+        token_path = ROOT_DIR / "token.txt"
+        if token_path.exists():
+            with open(token_path, "r") as f:
                 return f.readline()
         else:
             return ""
@@ -69,7 +69,7 @@ class ValidateToken():
         
         cookies = dict(response.cookies)
         authToken = cookies["CpAuthToken"]
-        with open("token.txt", "w") as f:
+        with open(ROOT_DIR / "token.txt", "w") as f:
             f.write(authToken)
     
     def jwt_exp(self, token: str) -> bool:
@@ -84,60 +84,9 @@ class ValidateToken():
 
 
 
-class ValidateConfig():
-    def __init__(self):
-        self.email, self.password = self.get_credentials()
-
-    def get_password(self):
-        with open("vars.env", "r") as f:
-            data = f.readlines()
-            for i in data:
-                if "PASSWORD" in i:
-                    password = i.strip().split("=", 1)[1]
-                    first_char, last_char = password[0], password[-1]
-                    if first_char == last_char:
-                        password = password.strip(f"{first_char}")
-                    return password
-
-                
-
-            
-
-    def get_credentials(self) -> tuple[str, str]:
-        email, password = os.getenv("EMAIL", ""), self.get_password()
-        if not email or not password:
-            raise RuntimeError("Well Fitness credentials missing")
-        return email, password
-    
-
-
-    
-    
 class ResponseHandling():
     def __init__(self):
         self.token = ValidateToken().token
-
-    def validate_response(self, gym_ids: list[int], gym_data: dict[str, int]) -> None:
-        if len(gym_data) != len(gym_ids):
-            if config().should_send_webhook():
-                RequestTypes().report_other_error_occured("Parsing of the response data failed! The report webhook was sent")
-                raise RuntimeError("Parsing of the response data failed! The report webhook was sent")
-            else: 
-                raise RuntimeError("Parsing of the response data failed! The report webhook was not sent")
-    
-    
-    def parse_response(self, data: dict, gym_ids: list[int]) -> dict[str, str]:
-        addresses = []
-        for gym_id in gym_ids:
-            addresses.append(club_addresses[gym_id])
-            
-        gym_data = {}
-        for club_info in data["UsersInClubList"]:
-            if club_info["ClubAddress"] in addresses:
-                gym_data[club_info["ClubAddress"]] = club_info["UsersCountCurrentlyInClub"]
-
-        self.validate_response(gym_ids, gym_data)
-        return gym_data        
 
             
     def request_data(self, gym_ids: list[int]) -> dict:

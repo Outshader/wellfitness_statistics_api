@@ -1,12 +1,17 @@
-import requests
+import os
+import json
 import shutil
 import tempfile
 from datetime import datetime
-import os
-import json
+from pathlib import Path
 from typing import Optional
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+import requests
 from dotenv import load_dotenv
-from validate_parameters import check_webhook
+
+from app.validate_parameters import check_webhook
 
 
 
@@ -14,15 +19,15 @@ from validate_parameters import check_webhook
 
 class SendRequest():
     def __init__(self) -> None:
-        load_dotenv("vars.env")
+        load_dotenv(ROOT_DIR / "vars.env")
         self.WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
     
     def send_webhook(self, content: str, file: Optional[str | list] = None) -> int:
         data = {"payload_json": json.dumps({"content":content, "username":"status_bot"})}
 
-        if file and os.path.exists(file):
-            with open(file, "rb") as f:  
-                files = {"file": (os.path.basename(file), f)}
+        if file and Path(file).exists():
+            with open(file, "rb") as f:
+                files = {"file": (Path(file).name, f)}
                 response = requests.post(self.WEBHOOK_URL, data=data, files=files)
                 return response.status_code
         else:
@@ -34,15 +39,15 @@ class SendRequest():
         temp_dir = tempfile.mkdtemp()
         print(f"Created temp dir {temp_dir}")
         screenshot_filename = filename + ".png"
-        
-        if os.path.exists(screenshot_filename):
+
+        if Path(screenshot_filename).exists():
             shutil.copy(screenshot_filename, temp_dir)
             print(f"Copied {screenshot_filename} to {temp_dir}")
-        
-        with open(os.path.join(temp_dir, "full_text.txt"), 'w') as file:
+
+        with open(Path(temp_dir) / "full_text.txt", 'w') as file:
             file.write("\n".join(txt))
-            
-        with open(os.path.join(temp_dir, "split_text.txt"), 'w') as file:
+
+        with open(Path(temp_dir) / "split_text.txt", 'w') as file:
             file.write("\n".join(txt_split))
             
         print(f"Created full_text.txt and split_text.txt")
