@@ -1,7 +1,7 @@
 import requests
 import json
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 import shutil
 from csv_methods import check_headers
 
@@ -49,21 +49,6 @@ def write_contents(filename, content):
         writer.writeheader()
         writer.writerows(content)
     
-    
-def subtract_ppl_count(to_subtract):
-    with open("logs.csv", "r") as file:
-        reader = csv.reader(file)
-        rows = list(reader)
-        
-    # for i in rows:
-    #     start_time, end_time = 
-    # subtract all the values from logs.csv using the timestamp +/- the duration of the class
-    
-    
-
-    # write_contents()
-
-
 def missing(data, id):
     for i in data:
         if i["Id"] == id:
@@ -78,8 +63,57 @@ def get_ppl_count(data, rows, ids):
         
 
     return counts
-            
+         
+def parse_duration(duration):
+    hours = 0
+    minutes = 0
 
+    for i, val in enumerate(duration):
+        if not val.isnumeric():
+            continue
+
+        if i + 1 < len(duration) and duration[i + 1] == "H":
+            hours = int(val)
+
+        elif i + 1 < len(duration) and duration[i + 1] == "M":
+            if i > 0 and duration[i - 1].isnumeric():
+                minutes = int(duration[i - 1] + val)
+            else:
+                minutes = int(val)
+
+    return timedelta(hours=hours, minutes=minutes)   
+       
+def subtract_ppl_count(to_subtract):
+    with open("logs.csv", "r") as file:
+        reader = csv.DictReader(file, fieldnames=["Club name","date_time","ppl_count"])
+        rows = list(reader)[1:]
+        
+    for row in rows:
+        log_time = datetime.fromisoformat(row["date_time"])
+        ppl_count = int(row["ppl_count"])
+        for subtract in to_subtract:
+            start_time = datetime.fromisoformat(subtract["StartTime"])
+            duration = parse_duration(subtract["Duration"])
+            end_time = start_time + duration
+            
+            if start_time <= log_time <= end_time:
+                ppl_count -= int(subtract["ppl_count"])
+        
+        row["ppl_count"] = ppl_count
+        
+    with open("logs_actual.csv", "w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=["Club name","date_time","ppl_count"])
+        writer.writeheader()
+        writer.writerows(rows)
+                
+        
+                
+    # subtract all the values from logs.csv using the timestamp +/- the duration of the class
+    
+    
+    
+
+    # write_contents()
 
 def verify_class_data(data):
     # analyze logs.csv, make logs_actual.csv where the class_data will be accounted for, 
@@ -117,10 +151,6 @@ def class_data_main():
         
     write_contents("classes.csv", packed_data)
 
-    # with open("scraper.txt", "w") as file:
-    #     writer = csv.DictWriter(file, fieldnames=["Id", "Duration", "StartTime", "ppl_count"])
-    #     writer.writeheader()
-    #     writer.writerows(packed_data)
                     
     
 
