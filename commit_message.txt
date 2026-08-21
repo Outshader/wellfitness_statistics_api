@@ -1,2 +1,0 @@
-feat: header verification in report_csv
-WIP: Scraping classess task. added most of the functionality. Subtraction form logs.csv remains
