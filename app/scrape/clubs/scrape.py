@@ -1,13 +1,13 @@
-import os
 from datetime import datetime
 from pathlib import Path
+from .parse import ParseResponse
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 
 import jwt
 import requests
 
-from app.statistics.clubs.parse import ValidateConfig
+from app.scrape.clubs.parse import ValidateConfig
 
 
 class ValidateToken():
@@ -28,28 +28,10 @@ class ValidateToken():
         return token
     
     def read_token(self) -> str:
-        token_path = ROOT_DIR / "token.txt"
+        token_path = ROOT_DIR / "data" / "token.txt"
         if token_path.exists():
             with open(token_path, "r") as f:
                 return f.readline()
-        else:
-            return ""
-    
-    def check_response(self, response: requests.models.Response) -> str:
-        json_content = response.json()
-        cookies = response.cookies
-        token = cookies["CpAuthToken"] or ""
-        if not token:
-            err_content = json_content["Errors"]
-            if "Errors" in json_content:
-                msg_content = err_content[0]["Message"]
-                if "login" in msg_content or "password" in msg_content:
-                    return "Login or password is incorrect"
-                else:
-                    return msg_content
-                
-            else:
-                return f"Something went wrong \n error content:\n {err_content}, json_content: \n{json_content}, Cookies:\n {cookies}"
         else:
             return ""
     
@@ -63,13 +45,13 @@ class ValidateToken():
             json=data_raw,
             headers=headers,
         )
-        valid_response = self.check_response(response)
+        valid_response = ParseResponse().check_response(response)
         if valid_response:
             raise RuntimeError(valid_response)
         
         cookies = dict(response.cookies)
         authToken = cookies["CpAuthToken"]
-        with open(ROOT_DIR / "token.txt", "w") as f:
+        with open(ROOT_DIR / "data" / "token.txt", "w") as f:
             f.write(authToken)
     
     def jwt_exp(self, token: str) -> bool:
@@ -95,6 +77,6 @@ class ResponseHandling():
             "CpAuthToken": self.token,
         }
         response = requests.post(url, cookies=cookies)
-        parsed_response = self.parse_response(response.json(), gym_ids)
+        parsed_response = ParseResponse().parse_response(data=response.json(), gym_ids=gym_ids)
         return parsed_response
 

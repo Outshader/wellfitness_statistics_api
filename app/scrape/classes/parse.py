@@ -1,9 +1,12 @@
 
 import csv
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from app.scripts.csv import check_headers
-from app.statistics.classes.scrape import scrape_data
+from app.scrape.classes.scrape import scrape_data
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 
     
@@ -33,7 +36,12 @@ def pack_class_data(data: dict) -> list[dict]:
 
 def write_contents(filename, content):
     fieldnames = ["Id", "Duration", "StartTime", "ppl_count"]
-    with open(f"{filename}", "w", newline="", encoding="utf-8") as file:
+    file_path = Path(filename) if isinstance(filename, (str, Path)) else None
+    if file_path is None or not file_path.is_absolute():
+        file_path = ROOT_DIR / "data" / str(filename)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(file_path, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(content)
@@ -73,7 +81,8 @@ def parse_duration(duration):
     return timedelta(hours=hours, minutes=minutes)   
        
 def subtract_ppl_count(to_subtract):
-    with open("logs.csv", "r") as file:
+    data_logs = ROOT_DIR / "data" / "logs.csv"
+    with open(data_logs, "r", newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file, fieldnames=["Club name","date_time","ppl_count"])
         rows = list(reader)[1:]
         
@@ -90,14 +99,17 @@ def subtract_ppl_count(to_subtract):
         
         row["ppl_count"] = ppl_count
         
-    with open("logs_actual.csv", "w", newline="", encoding="utf-8") as file:
+    logs_actual = ROOT_DIR / "data" / "logs_actual.csv"
+    logs_actual.parent.mkdir(parents=True, exist_ok=True)
+    with open(logs_actual, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=["Club name","date_time","ppl_count"])
         writer.writeheader()
         writer.writerows(rows)
                 
 
 def verify_class_data(data):
-    with open("classes.csv", "r") as file:
+    classes_file = ROOT_DIR / "data" / "classes.csv"
+    with open(classes_file, "r", newline="", encoding="utf-8") as file:
         writer = csv.DictReader(file)
         rows = list(writer)
         

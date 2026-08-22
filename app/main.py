@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from app.config import config
 from app.reports.csv import report_csv_append
 from app.reports.webhook import RequestTypes
-from app.statistics.clubs.scrape import ResponseHandling
+from app.scrape.clubs.scrape import ResponseHandling
 from app.validate_parameters import check_gym_ids, check_webhook
 
 load_dotenv(ROOT_DIR / "vars.env")
@@ -25,6 +25,7 @@ class Main():
     
     def main(self) -> None:
         gym_data = self.get_gym_data.request_data(self.gym_ids)
+        print(gym_data)
         timestamp = datetime.now().strftime("%Y-%m-%A_%H-%M")
         
         print("Logging results")

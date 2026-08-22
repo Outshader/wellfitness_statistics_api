@@ -5,7 +5,9 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 
 
 def check_headers(required):
-    with open(ROOT_DIR / "logs.csv", mode="r+", newline="", encoding="utf-8") as file:
+    data_path = ROOT_DIR / "data" / "logs.csv"
+    data_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(data_path, mode="r+", newline="", encoding="utf-8") as file:
         file_content = file.readlines()
         first_row = file_content[0]
         
