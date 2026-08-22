@@ -24,7 +24,7 @@ def check_headers(required):
             writer.writeheader()
         elif missing and not entry:
             file_content.pop(0)
-            required = ", ".join(required)
+            required = ",".join(required)
             file_content.insert(0,required+"\n")
             file_content = "".join(file_content)
             

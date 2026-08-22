@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from app.scripts.csv import check_headers
-from app.scrape.classes.scrape import scrape_data
+from app.statistics.classes.scrape import scrape_data
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 
@@ -15,7 +15,6 @@ def iter_class(class_data):
         for hourClass in data.get("ClassesPerHour", []):
             for dayClass in hourClass.get("ClassesPerDay", []):
                 yield from dayClass
-                
                 
 def pack_class_data(data: dict) -> list[dict]:       
     class_info = []
@@ -34,17 +33,7 @@ def pack_class_data(data: dict) -> list[dict]:
     
 
 
-def write_contents(filename, content):
-    fieldnames = ["Id", "Duration", "StartTime", "ppl_count"]
-    file_path = Path(filename) if isinstance(filename, (str, Path)) else None
-    if file_path is None or not file_path.is_absolute():
-        file_path = ROOT_DIR / "data" / str(filename)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(file_path, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(content)
     
 def missing(data, id):
     for i in data:
@@ -61,33 +50,26 @@ def get_ppl_count(data, rows, ids):
 
     return counts
          
+            
 def parse_duration(duration):
-    hours = 0
-    minutes = 0
-
-    for i, val in enumerate(duration):
-        if not val.isnumeric():
-            continue
-
-        if i + 1 < len(duration) and duration[i + 1] == "H":
-            hours = int(val)
-
-        elif i + 1 < len(duration) and duration[i + 1] == "M":
-            if i > 0 and duration[i - 1].isnumeric():
-                minutes = int(duration[i - 1] + val)
-            else:
-                minutes = int(val)
-
-    return timedelta(hours=hours, minutes=minutes)   
-       
+    duration = duration.strip("PT")
+    
+    hours = duration.split("H")[0] if "H" in duration else 0
+    minutes = duration.split("H")[-1].strip("M")
+    
+    return timedelta(hours=int(hours), minutes=int(minutes))   
+            
+                
 def subtract_ppl_count(to_subtract):
     data_logs = ROOT_DIR / "data" / "logs.csv"
     with open(data_logs, "r", newline="", encoding="utf-8") as file:
-        reader = csv.DictReader(file, fieldnames=["Club name","date_time","ppl_count"])
-        rows = list(reader)[1:]
+        reader = csv.DictReader(file)
+        rows = list(reader)
+    print(rows)
+        
         
     for row in rows:
-        log_time = datetime.fromisoformat(row["date_time"])
+        log_time = datetime.fromisoformat(row["timestamp"])
         ppl_count = int(row["ppl_count"])
         for subtract in to_subtract:
             start_time = datetime.fromisoformat(subtract["StartTime"])
@@ -102,47 +84,61 @@ def subtract_ppl_count(to_subtract):
     logs_actual = ROOT_DIR / "data" / "logs_actual.csv"
     logs_actual.parent.mkdir(parents=True, exist_ok=True)
     with open(logs_actual, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=["Club name","date_time","ppl_count"])
+        fieldnames=["Club address", "timestamp", "ppl_count"]
+        check_headers(fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+        
+        
+        
+        
                 
 
 def verify_class_data(data):
     classes_file = ROOT_DIR / "data" / "classes.csv"
+
     with open(classes_file, "r", newline="", encoding="utf-8") as file:
-        writer = csv.DictReader(file)
-        rows = list(writer)
-        
+        reader = csv.DictReader(file)
+        rows = list(reader)
+
+    now = datetime.now()
+
     to_subtract = []
-    ppl_count = []
     for row in rows:
-        row_id = row["Id"]
-        if datetime.fromisoformat(row["StartTime"]) <= datetime.now():
-            to_subtract.append({"Id": row_id, "ppl_count": None, "Duration": row["Duration"], "StartTime": row["StartTime"]})
-            ppl_count.append(row_id)
-        elif missing(data, row["Id"]):
-            to_subtract.append({"Id": row_id, "ppl_count": None, "Duration": row["Duration"], "StartTime": row["StartTime"]})
-            ppl_count.append(row_id)
-            
-    if to_subtract:
-        ppl_count = get_ppl_count(data, rows, to_subtract)
-        for i in to_subtract:
-            i["ppl_count"] = ppl_count.get(i["Id"], 0)
-        subtract_ppl_count(to_subtract)
+        if datetime.fromisoformat(row["StartTime"]) <= now:
+            to_subtract.append(
+                {
+                    "Id": row["Id"],
+                    "ppl_count": None,
+                    "Duration": row["Duration"],
+                    "StartTime": row["StartTime"],
+                }
+            )
+
+    if not to_subtract:
+        return
+
+    ppl_counts = get_ppl_count(data, rows, to_subtract)
+
+    for row in to_subtract:
+        row["ppl_count"] = ppl_counts.get(row["Id"], 0)
+
+    subtract_ppl_count(to_subtract)
         
 
-       
+
         
 def class_data_main():        
     class_data = scrape_data()
 
     packed_data = pack_class_data(class_data)
     verify_class_data(packed_data)
-    
 
-        
-    write_contents("classes.csv", packed_data)
-
+    with open(ROOT_DIR / "data" / "classes.csv", "w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=["Id", "Duration", "StartTime", "ppl_count"])
+        writer.writeheader()
+        writer.writerows(packed_data)
                     
     
 

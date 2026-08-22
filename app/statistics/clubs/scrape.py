@@ -7,7 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 import jwt
 import requests
 
-from app.scrape.clubs.parse import ValidateConfig
+from app.statistics.clubs.parse import ValidateConfig
 
 
 class ValidateToken():
