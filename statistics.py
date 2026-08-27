@@ -2,19 +2,14 @@ import os
 import csv
 from pathlib import Path
 import dotenv
-import requests
-from app.config import config
-from app.reports.webhook import RequestTypes
+from api import Classes as ApiClasses
+from datetime import datetime, timedelta
+from methods import check_headers
 
-# data directory is at the repository root: <repo>/data
-DATA_ROOT = ROOT_DIR / "data"
-
-ROOT_DIR = Path(__file__).resolve().parents[3]
-
-dotenv.load_dotenv(ROOT_DIR / "vars.env")
+dotenv.load_dotenv("data/vars.env")
 
 class Clubs():
-
+    pass
 
 
 class ValidateConfig():
@@ -22,7 +17,7 @@ class ValidateConfig():
         self.email, self.password = self.get_credentials()
 
     def get_password(self):
-        with open(ROOT_DIR / "vars.env", "r") as f:
+        with open("data/vars.env", "r") as f:
             data = f.readlines()
             for i in data:
                 if "PASSWORD" in i:
@@ -37,48 +32,6 @@ class ValidateConfig():
         if not email or not password:
             raise RuntimeError("Well Fitness credentials missing")
         return email, password
-    
-
-
-    
-    
-from datetime import datetime
-from pathlib import Path
-from .parse import ParseResponse
-
-ROOT_DIR = Path(__file__).resolve().parents[3]
-
-import jwt
-import requests
-
-from app.statistics.clubs.parse import ValidateConfig
-
-
-class ValidateToken():
-
-
-
-
-class ResponseHandling():
-    def __init__(self):
-
-
-class Classes():
-import requests
-
-
-
-
-import csv
-from datetime import datetime, timedelta
-from pathlib import Path
-
-from app.scripts.csv import check_headers
-from app.statistics.classes.scrape import scrape_data
-
-ROOT_DIR = Path(__file__).resolve().parents[3]
-
-
     
 def iter_class(class_data):
     for data in class_data.get("CalendarData", []):
@@ -131,7 +84,7 @@ def parse_duration(duration):
             
                 
 def subtract_ppl_count(to_subtract):
-    data_logs = ROOT_DIR / "data" / "logs.csv"
+    data_logs = "data/logs.csv"
     with open(data_logs, "r", newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file)
         rows = list(reader)
@@ -151,7 +104,7 @@ def subtract_ppl_count(to_subtract):
         
         row["ppl_count"] = ppl_count
         
-    logs_actual = ROOT_DIR / "data" / "logs_actual.csv"
+    logs_actual = Path("data/logs_actual.csv")
     logs_actual.parent.mkdir(parents=True, exist_ok=True)
     with open(logs_actual, "w", newline="", encoding="utf-8") as file:
         fieldnames=["Club address", "timestamp", "ppl_count"]
@@ -166,7 +119,7 @@ def subtract_ppl_count(to_subtract):
                 
 
 def verify_class_data(data):
-    classes_file = ROOT_DIR / "data" / "classes.csv"
+    classes_file = "data/classes.csv"
 
     with open(classes_file, "r", newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file)
@@ -200,12 +153,12 @@ def verify_class_data(data):
 
         
 def class_data_main():        
-    class_data = scrape_data()
+    class_data = ApiClasses().scrape_classes()
 
     packed_data = pack_class_data(class_data)
     verify_class_data(packed_data)
 
-    with open(ROOT_DIR / "data" / "classes.csv", "w", newline="", encoding="utf-8") as file:
+    with open("data/classes.csv", "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=["Id", "Duration", "StartTime", "ppl_count"])
         writer.writeheader()
         writer.writerows(packed_data)

@@ -1,34 +1,25 @@
-from pathlib import Path
-import requests
-from datetime import datetime
 import csv
-import jwt
-from main import Config
-
-ROOT_DIR = Path(__file__).resolve().parents[3]
-
-DATA_ROOT = ROOT_DIR / "data"
+import os
+import requests
+from config import Config
 
 class Clubs():
-    def __init__(self):
-        self.token = Config().token
     
     def parse_response(self, data: dict, gym_ids: list[int]) -> dict[str, str]:
-        with open(DATA_ROOT / "clubs.csv", encoding="utf-8", mode="r") as file:
-            reader = csv.DictReader(file, fieldnames=["ID", "club_name", "club_address"])            
+        with open("data/clubs.csv", encoding="utf-8", mode="r") as file:
+            reader = csv.DictReader(file)
             rows = list(reader)
-            addresses = []
+            names = []
             
             for row in rows:
-                for gym_id in gym_ids:
-                    if row["ID"] == gym_id:
-                        addresses.append(row["club_address"])
-                        continue
+                if row and int(row["ID"]) in gym_ids:
+                    names.append(row["club_name"].strip())
+                    
             
         gym_data = {}
         for club_info in data["UsersInClubList"]:
-            if club_info["ClubAddress"] in addresses:
-                gym_data[club_info["ClubAddress"]] = club_info["UsersCountCurrentlyInClub"]
+            if club_info["ClubName"] in names:
+                gym_data[club_info["ClubName"]] = club_info["UsersCountCurrentlyInClub"]
 
         return gym_data        
 
@@ -60,23 +51,26 @@ class Clubs():
             json=data_raw,
             headers=headers,
         )
-        valid_response = self.check_response(response)
-        if valid_response:
-            raise RuntimeError(valid_response)
+        invalid_response = self.check_response(response)
+        if invalid_response:
+            raise RuntimeError(invalid_response)
         
         cookies = dict(response.cookies)
         authToken = cookies["CpAuthToken"]
-        with open(ROOT_DIR / "data" / "token.txt", "w") as f:
-            f.write(authToken)
+        os.environ["AUTH_TOKEN"] = authToken
 
         
     def clubs_main(self, gym_ids: list[int]) -> dict:
         url = "https://wellfitness.perfectgym.com/ClientPortal2/Clubs/Clubs/GetMembersInClubs"
         cookies = {
-            "CpAuthToken": self.token,
+            "CpAuthToken": Config().token
         }
         response = requests.post(url, cookies=cookies)
-        parsed_response = self.parse_response(data=response.json(), gym_ids=gym_ids)
+        try:
+            parsed_response = self.parse_response(data=response.json(), gym_ids=gym_ids)
+        except requests.exceptions.JSONDecodeError:
+            raise requests.exceptions.JSONDecodeError
+        
         return parsed_response
 
 

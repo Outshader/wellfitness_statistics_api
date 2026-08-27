@@ -5,3 +5,4 @@ helper.*
 gym_venv/
 .vscode
 .docker
+data/vars.env
