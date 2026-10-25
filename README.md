@@ -1,3 +1,7 @@
+# Archived
+Repo is archived and won't be maintained anymore. 
+Improved in: https://github.com/Outshader/Well-Fitness-Occupancy-meter
+
 Updated repo of https://github.com/Outshader/wellfitness_population_counter
 
 This version uses the PerfectGym/Well Fitness API
